@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algorithm Visualizer</title>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            background: linear-gradient(to bottom,#EDF1F4,#C3CBDC); /* Vertical gradient from light blue to dark blue */
+
+            overflow:hidden;
+        }
+
+        .content {
+            display: flex;
+            justify-content: flex-start; /* Align bars to the right */
+            align-items: flex-end; /* Align bars to the bottom */
+            padding-left:10px;
+            padding-right:10px;
+            height: 100%;
+            margin:20px;
+        }
+
+        .bar {
+            margin-bottom:100px;
+            position:relative;
+            width: 40px;
+            margin-left: 10px; /* Gap between bars */
+            background-color:#5e6e82;
+            border-radius:10px;
+
+        }
+        .controls {
+            text-align: center;
+            padding: 20px 0;
+        }
+        #barValues{
+            width:300px;
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <form id="barForm">
+            <button type="button" onclick="makeBars()">Randomize</button>
+            <select id="sortingAlgorithm">
+                <option value="bubble">Bubble Sort</option>
+                <option value="insertion">Insertion Sort</option>
+                <option value="quick">Quick Sort</option>
+                <option value="heap">Heap Sort</option>
+                <option value="merge">Merge Sort</option>
+                <option value="selection">Selection Sort</option>
+                <option value="shell">Shell Sort</option>
+            </select>
+            <button type="button" onclick="send()">Sort</button>
+    </div>
+    <div class="content" id="barsContainer">
+    </div>
+    <script>
+        let barHeights = [];
+
+        function generateValues() {
+            const numberOfBars = 37; // Number of random bars to generate
+
+            // Clear the barHeights array before generating new heights
+            barHeights = [];
+
+            for (let i = 0; i < numberOfBars; i++) {
+                // Generate a random value between 50 and 200 pixels
+                const barHeight = Math.floor(Math.random() * (800 - 50 + 1)) + 50;
+                barHeights.push(barHeight); // Append the random height to the array
+            }
+        }
+        function generateBars() {
+            const InsertionSort = document.getElementById("barsContainer");
+            barsContainer.innerHTML = "";
+
+            for (const barHeight of barHeights) {
+                const bar = document.createElement("div");
+                bar.className = "bar";
+                bar.style.height = barHeight + "px";
+                barsContainer.appendChild(bar);
+            }
+        }
+
+        async function send() {
+            const selectedAlgorithm = document.getElementById("sortingAlgorithm").value;
+            const response = await fetch('/sort', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ algorithm: selectedAlgorithm, heights: barHeights }),
+            });
+
+            if (response.ok) {
+                const sortedData = await response.json();
+                updateVisualization(sortedData)
+            } else {
+                console.error('Error:', response.status, response.statusText);
+            }
+        }
+        function updateVisualization(sortedData) {
+            const delay = 250; 
+            const barsContainer = document.getElementById("barsContainer");
+
+            function applyStep(index) {
+                setTimeout(function () {
+                    if (index < sortedData.length) {
+                        barHeights = sortedData[index];
+                        generateBars();
+                        applyStep(index + 1);
+                    }
+                }, delay);
+            }
+
+            applyStep(0);
+        }
+
+
+
+        function makeBars(){
+            generateValues();
+            generateBars();
+        }
+    window.onload = makeBars;
+    </script>
+</body>
+</html>
+
